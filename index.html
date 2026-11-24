@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c1e22">
+<title>Atelier Perso 3D</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: atelier de sculpteur numérique, précis et calme
+   IDEA: une sellette de sculpteur — le perso tourne sous la lumière, les outils sont rangés à côté
+   PICTURE: le personnage 3D lui-même, plein cadre, éclairé en studio
+   COLOUR and TYPE: gris argile du studio, panneau clair, accent bleu-vert ; Manrope partout
+   LAYOUT: viewport 3D à gauche (en haut sur téléphone), panneau d'onglets à droite */
+:root{color-scheme:light dark;
+--bg:light-dark(#eceae6,#121316);--panel:light-dark(#ffffff,#1b1d21);--ink:light-dark(#1a1b1e,#e9eaec);--mute:light-dark(#62656b,#9ba0a8);
+--line:light-dark(#dcdad5,#2c2f35);--acc:light-dark(#0e6d66,#4fc1b4);--acc-ink:light-dark(#ffffff,#0b1f1d);--soft:light-dark(#f3f2ef,#23262b);--ver:#d24a31}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,sans-serif;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,420px);height:100dvh}
+@media(max-width:860px){.app{grid-template-columns:minmax(0,1fr);grid-template-rows:52dvh minmax(0,1fr)}}
+.stage{position:relative;overflow:hidden}
+#c3d{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;--bg3d:#2b2e34;background:radial-gradient(ellipse at 50% 35%,#3a3e46,#1f2126)}
+.brand{position:absolute;left:14px;top:12px;color:#f2f2f2;pointer-events:none}
+.brand h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.01em}
+.brand p{margin:0;font-size:12.5px;opacity:.7}
+.views{position:absolute;right:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.views button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:999px;min-height:38px;padding:0 14px;cursor:pointer;backdrop-filter:blur(6px)}
+.empty{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 50% 35%,#3a3e46,#1f2126);color:#f1f1f1}
+.empty[hidden]{display:none}
+.card{max-width:520px;background:rgba(20,22,26,.82);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px}
+.card h2{margin:0 0 6px;font-size:clamp(22px,3.4vw,30px);line-height:1.1;font-weight:800}
+.card ol{padding-left:20px;margin:10px 0;color:#d6d8dc}.card li{margin:6px 0}
+.card a{color:#7fd8cc}
+.side{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+@media(max-width:860px){.side{border-left:0;border-top:1px solid var(--line)}}
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);flex:none;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;border:0;background:none;padding:0 13px;min-height:48px;cursor:pointer;color:var(--mute);border-bottom:3px solid transparent;font-weight:600}
+.tabs button[aria-selected=true]{color:var(--acc);border-bottom-color:var(--acc)}
+#pane{overflow-y:auto;padding:12px 14px 40px;flex:1}
+.search{position:sticky;top:-12px;background:var(--panel);padding:10px 0 8px;z-index:2;margin-top:-12px}
+.search input{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 12px;background:var(--soft);font-size:16px}
+h3{font-size:15px;margin:18px 0 8px;font-weight:800}
+.grp{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--panel)}
+.grp>summary{cursor:pointer;padding:11px 12px;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.grp>summary::after{content:"+";color:var(--mute);font-weight:400}.grp[open]>summary::after{content:"−"}
+.grp>summary small{margin-left:auto;margin-right:10px;color:var(--mute);font-weight:500}
+.grp>:not(summary){margin-left:12px;margin-right:12px}.grp>:last-child{margin-bottom:10px}
+.sl{padding:4px 0}
+.sl label{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.sl output{color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+input[type=range]{width:100%;height:30px;accent-color:var(--acc);margin:0}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute);margin:6px 0}
+label.f select,label.f input[type=color]{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:4px 8px;font-size:16px;color:var(--ink);width:100%}
+.chk{display:flex;align-items:center;gap:8px;min-height:40px;font-size:14px;cursor:pointer}.chk input{width:20px;height:20px;accent-color:var(--acc)}
+.hero{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:2px 0 6px}
+.hero div{background:var(--soft);border-radius:12px;padding:10px 12px}.hero b{display:block;font-size:24px;font-weight:800;white-space:nowrap}.hero span{font-size:12.5px;color:var(--mute)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;min-height:44px;padding:0 15px;cursor:pointer;background:var(--acc);color:var(--acc-ink);font-weight:700}
+.btn.alt{background:var(--soft);color:var(--ink);border:1px solid var(--line);font-weight:600}.btn.del{background:none;border:1px solid var(--ver);color:var(--ver)}
+.note{font-size:13px;color:var(--mute);margin:6px 0}
+.ok{font-size:13.5px;background:light-dark(#e3f2ef,#16302c);color:light-dark(#0b4f49,#a7e3da);border-radius:10px;padding:8px 12px}
+.sw{display:flex;gap:8px;flex-wrap:wrap}.swb{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+.busy{position:fixed;inset:0;background:rgba(10,11,13,.55);display:grid;place-items:center;z-index:20;color:#fff}
+.busy[hidden]{display:none}
+.busy div{background:#1c1e22;border-radius:14px;padding:18px 22px;max-width:80vw;text-align:center}
+.spin{width:34px;height:34px;border:3px solid rgba(255,255,255,.2);border-top-color:#4fc1b4;border-radius:50%;margin:0 auto 10px;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:90vw}
+.toast.on{opacity:1}
+body.drop .stage::after{content:"Dépose ici le dossier ou le .zip MakeHuman";position:absolute;inset:12px;border:3px dashed #4fc1b4;border-radius:16px;display:grid;place-items:center;color:#fff;font-weight:700;background:rgba(0,0,0,.35)}
+:focus-visible{outline:2px solid var(--ver);outline-offset:2px}
+@media(max-width:600px){.brand p{display:none}.brand h1{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="stage" aria-label="Aperçu 3D">
+    <canvas id="c3d" aria-label="Personnage en 3D : glisser pour tourner, pincer ou molette pour zoomer"></canvas>
+    <div class="brand"><h1>Atelier Perso 3D</h1><p>Glisse pour tourner · pince pour zoomer · deux doigts pour déplacer</p></div>
+    <div class="empty" id="empty" hidden>
+      <div class="card">
+        <h2>Charge le corps humain MakeHuman</h2>
+        <p style="color:#c9cbd0;margin:0">L'appli construit ton perso à partir des données libres de MakeHuman. Elles se chargent une seule fois, puis restent sur l'appareil.</p>
+        <ol>
+          <li>Sur ton PC, télécharge l'extension <b>MPFB</b> sur extensions.blender.org (bouton « Download », un .zip d'environ 43 Mo) : elle contient le corps de base et toutes les formes.</li>
+          <li>Télécharge aussi le pack <b>« MakeHuman system assets »</b> sur la page Asset packs de makehumancommunity.org : yeux, cils, sourcils, cheveux, dents.</li>
+          <li>Donne les deux .zip à l'appli, sans les décompresser.</li>
+        </ol>
+        <div class="btns"><label class="btn">Choisir les .zip<input type="file" id="emptyFiles" multiple accept=".zip,.obj,.target,.gz,.mhclo,.mhmat,.png,.jpg" hidden></label><label class="btn alt">Choisir un dossier<input type="file" id="emptyDir" webkitdirectory multiple hidden></label></div>
+        <p class="note" id="emptyLog" style="color:#aab0b8">Tu peux aussi glisser les fichiers sur cette zone.</p>
+      </div>
+    </div>
+  </section>
+  <aside class="side">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="pane"></div>
+  </aside>
+</div>
+<div class="busy" id="busy" hidden><div><div class="spin"></div><span id="busyMsg">Chargement…</span></div></div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+/* ================= CORE : lecture des données MakeHuman, morphing, ajustement des proxys ================= */
+const Core = (() => {
+  const td = new TextDecoder();
+
+  /* ---------- décompression ---------- */
+  async function inflate(buf, fmt) {
+    const ds = new DecompressionStream(fmt);
+    const stream = new Blob([buf]).stream().pipeThrough(ds);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  /* ---------- lecture d'un .zip (sans bibliothèque) ---------- */
+  async function readZip(buf) {
+    const u8 = new Uint8Array(buf), dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("Archive zip illisible");
+    let n = dv.getUint16(eocd + 10, true), off = dv.getUint32(eocd + 16, true);
+    // zip64 : rare pour ces packs, on tente quand même via le locator
+    if (off === 0xffffffff || n === 0xffff) {
+      const loc = eocd - 20;
+      if (loc >= 0 && dv.getUint32(loc, true) === 0x07064b50) {
+        const z64 = Number(dv.getBigUint64(loc + 8, true));
+        n = Number(dv.getBigUint64(z64 + 32, true)); off = Number(dv.getBigUint64(z64 + 48, true));
+      }
+    }
+    const out = [];
+    for (let k = 0; k < n; k++) {
+      if (dv.getUint32(off, true) !== 0x02014b50) break;
+      const method = dv.getUint16(off + 10, true);
+      let csize = dv.getUint32(off + 20, true);
+      const nl = dv.getUint16(off + 28, true), el = dv.getUint16(off + 30, true), cl = dv.getUint16(off + 32, true);
+      let lho = dv.getUint32(off + 42, true);
+      const name = td.decode(u8.subarray(off + 46, off + 46 + nl));
+      if (csize === 0xffffffff || lho === 0xffffffff) {
+        let p = off + 46 + nl, end = p + el;
+        while (p < end) {
+          const id = dv.getUint16(p, true), sz = dv.getUint16(p + 2, true);
+          if (id === 1) {
+            let q = p + 4;
+            if (dv.getUint32(off + 24, true) === 0xffffffff) q += 8;
+            if (csize === 0xffffffff) { csize = Number(dv.getBigUint64(q, true)); q += 8; }
+            if (lho === 0xffffffff) lho = Number(dv.getBigUint64(q, true));
+          }
+          p += 4 + sz;
+        }
+      }
+      off += 46 + nl + el + cl;
+      if (name.endsWith("/")) continue;
+      const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      const data = u8.subarray(start, start + csize);
+      out.push({
+        path: name,
+        get: async () => method === 0 ? data : method === 8 ? inflate(data, "deflate-raw") : (() => { throw new Error("compression non gérée"); })()
+      });
+    }
+    return out;
+  }
+
+  const norm = p => p.replace(/\\/g, "/").replace(/\/+/g, "/").toLowerCase();
+  const base = p => p.split("/").pop();
+  const dir = p => p.slice(0, p.lastIndexOf("/") + 1);
+  function resolve(fromDir, rel) {
+    const parts = (fromDir + rel.replace(/\\/g, "/")).split("/"), outp = [];
+    for (const s of parts) { if (s === "..") outp.pop(); else if (s !== "." && s !== "") outp.push(s); }
+    return norm(outp.join("/"));
+  }
+
+  /* ---------- OBJ ---------- */
+  function parseOBJ(text) {
+    const v = [], vt = [], faces = [];
+    let group = "default";
+    const lines = text.split(/\r?\n/);
+    for (const raw of lines) {
+      const l = raw.trim();
+      if (!l || l[0] === "#") continue;
+      const sp = l.split(/\s+/), k = sp[0];
+      if (k === "v") v.push(+sp[1], +sp[2], +sp[3]);
+      else if (k === "vt") vt.push(+sp[1], +sp[2]);
+      else if (k === "g" || k === "o") group = (sp[1] || "default").toLowerCase();
+      else if (k === "f") {
+        const fv = [], ft = [];
+        for (let i = 1; i < sp.length; i++) {
+          const q = sp[i].split("/");
+          let a = parseInt(q[0], 10); a = a < 0 ? v.length / 3 + a : a - 1;
+          let b = q[1] ? parseInt(q[1], 10) : 0; b = q[1] ? (b < 0 ? vt.length / 2 + b : b - 1) : -1;
+          fv.push(a); ft.push(b);
+        }
+        faces.push({ v: fv, t: ft, g: group });
+      }
+    }
+    return { pos: new Float32Array(v), uv: new Float32Array(vt), faces };
+  }
+
+  /* maillage d'affichage : un sommet par couple (sommet, uv), triangulé */
+  function buildRender(obj, faceFilter) {
+    const key = new Map(), rv2v = [], uv = [], tri = [], triBase = [];
+    const get = (vi, ti) => {
+      const k = vi * 1048576 + (ti + 1);
+      let r = key.get(k);
+      if (r === undefined) {
+        r = rv2v.length; key.set(k, r); rv2v.push(vi);
+        if (ti >= 0) uv.push(obj.uv[ti * 2], obj.uv[ti * 2 + 1]); else uv.push(0, 0);
+      }
+      return r;
+    };
+    for (const f of obj.faces) {
+      if (faceFilter && !faceFilter(f)) continue;
+      const r = f.v.map((vi, i) => get(vi, f.t[i]));
+      for (let i = 1; i + 1 < r.length; i++) {
+        tri.push(r[0], r[i], r[i + 1]);
+        triBase.push(f.v[0], f.v[i], f.v[i + 1]);
+      }
+    }
+    return { rv2v: new Uint32Array(rv2v), uv: new Float32Array(uv), tri: new Uint32Array(tri), triBase: new Uint32Array(triBase) };
+  }
+
+  /* ---------- .target ---------- */
+  function parseTarget(text, nVerts) {
+    const idx = [], d = [];
+    let mx = 0;
+    for (const raw of text.split(/\r?\n/)) {
+      const l = raw.trim();
+      if (!l || l[0] === "#") continue;
+      const sp = l.split(/[\s,]+/);
+      if (sp.length < 4) continue;
+      const i = parseInt(sp[0], 10);
+      if (!(i >= 0) || (nVerts && i >= nVerts)) continue;
+      const x = +sp[1], y = +sp[2], z = +sp[3];
+      if (!isFinite(x + y + z)) continue;
+      idx.push(i); d.push(x, y, z);
+      mx = Math.max(mx, Math.abs(x), Math.abs(y), Math.abs(z));
+    }
+    const s = mx > 0 ? mx / 32767 : 1;
+    const q = new Int16Array(d.length);
+    for (let k = 0; k < d.length; k++) q[k] = Math.round(d[k] / s);
+    const big = nVerts > 65535 || idx.some(i => i > 65535);
+    return { idx: big ? new Uint32Array(idx) : new Uint16Array(idx), d: q, s };
+  }
+
+  /* ---------- .mhclo ---------- */
+  function parseMhclo(text) {
+    const o = { name: "", obj: "", mat: "", scales: [null, null, null], refs: [], offs: 0 };
+    let inVerts = false;
+    for (const raw of text.split(/\r?\n/)) {
+      const l = raw.trim();
+      if (!l || l[0] === "#") continue;
+      const sp = l.split(/\s+/);
+      if (inVerts) {
+        if (/^-?\d/.test(sp[0])) {
+          if (sp.length >= 9) o.refs.push([+sp[0], +sp[1], +sp[2], +sp[3], +sp[4], +sp[5], +sp[6], +sp[7], +sp[8]]);
+          else if (sp.length >= 6) o.refs.push([+sp[0], +sp[1], +sp[2], +sp[3], +sp[4], +sp[5], 0, 0, 0]);
+          else o.refs.push([+sp[0], +sp[0], +sp[0], 1, 0, 0, 0, 0, 0]);
+          continue;
+        }
+        inVerts = false;
+      }
+      const k = sp[0].toLowerCase();
+      if (k === "name") o.name = sp.slice(1).join(" ");
+      else if (k === "obj_file") o.obj = sp.slice(1).join(" ");
+      else if (k === "material") o.mat = sp.slice(1).join(" ");
+      else if (k === "x_scale" || k === "y_scale" || k === "z_scale") o.scales["xyz".indexOf(k[0])] = [+sp[1], +sp[2], +sp[3]];
+      else if (k === "verts") inVerts = true;
+    }
+    return o;
+  }
+
+  function parseMhmat(text) {
+    const m = {};
+    for (const raw of text.split(/\r?\n/)) {
+      const l = raw.trim();
+      if (!l || l[0] === "#") continue;
+      const sp = l.split(/\s+/), k = sp[0];
+      if (k === "diffuseTexture") m.tex = sp.slice(1).join(" ");
+      else if (k === "diffuseColor") m.color = [+sp[1], +sp[2], +sp[3]];
+      else if (k === "name") m.name = sp.slice(1).join(" ");
+      else if (k === "transparent" || k === "alphaToCoverage") m.alpha = m.alpha || /true/i.test(sp[1] || "");
+    }
+    return m;
+  }
+
+  /* ---------- classement des proxys ---------- */
+  function proxyKind(p) {
+    if (/genital|penis|vagin|vulva/.test(p)) return "genitals";
+    if (/\/proxymeshes\/|\/clothes\/|\/3dobjs\//.test(p)) return null;
+    if (/eyelash/.test(p)) return "eyelashes";
+    if (/eyebrow/.test(p)) return "eyebrows";
+    if (/\/eyes\//.test(p) || /\beye/.test(base(p))) return "eyes";
+    if (/\/hair\//.test(p) || /\bhair/.test(base(p))) return "hair";
+    if (/teeth/.test(p)) return "teeth";
+    if (/tongue/.test(p)) return "tongue";
+    return null;
+  }
+
+  /* ---------- import d'un ensemble de fichiers ---------- */
+  async function importEntries(entries, pack, log) {
+    // dézippe les .zip imbriqués
+    let all = [];
+    for (const e of entries) {
+      const p = norm(e.path);
+      if (p.endsWith(".zip")) {
+        log(`Ouverture de ${base(p)}…`);
+        const z = await readZip(await e.get());
+        z.forEach(x => all.push({ path: norm(x.path), get: x.get }));
+      } else all.push({ path: p, get: e.get });
+    }
+    const byPath = new Map(all.map(e => [e.path, e]));
+    const byName = new Map();
+    all.forEach(e => { const b = base(e.path); if (!byName.has(b)) byName.set(b, e); });
+    const find = (fromDir, rel) => byPath.get(resolve(fromDir, rel)) || byPath.get(resolve(fromDir, rel) + ".gz") || byName.get(norm(base(rel))) || byName.get(norm(base(rel)) + ".gz");
+    const text = async e => { let b = await e.get(); if (e.path.endsWith(".gz")) b = await inflate(b, "gzip"); return td.decode(b); };
+    const blobOf = async e => new Blob([await e.get()], { type: /\.jpe?g$/.test(e.path) ? "image/jpeg" : "image/png" });
+
+    // 1. maillage de base
+    const baseCands = all.filter(e => /(^|\/)base\.obj(\.gz)?$/.test(e.path));
+    baseCands.sort((a, b) => (b.path.includes("3dobjs") ? 1 : 0) - (a.path.includes("3dobjs") ? 1 : 0));
+    if (baseCands.length) {
+      log("Lecture du corps de base…");
+      const obj = parseOBJ(await text(baseCands[0]));
+      const n = obj.pos.length / 3;
+      const groups = {};
+      for (const f of obj.faces) {
+        if (f.g.startsWith("joint") || f.g.startsWith("helper")) {
+          (groups[f.g] = groups[f.g] || new Set());
+          f.v.forEach(i => groups[f.g].add(i));
+        }
+      }
+      const hasBody = obj.faces.some(f => f.g === "body");
+      const rend = buildRender(obj, f => hasBody ? f.g === "body" : !(f.g.startsWith("joint") || f.g.startsWith("helper")));
+      const g2 = {};
+      for (const k in groups) g2[k] = Uint32Array.from(groups[k]);
+      if (pack.base && pack.base.n !== n) { pack.targets = []; log("Nouveau corps de base : anciens curseurs retirés."); }
+      pack.base = { n, pos: obj.pos, groups: g2, ...rend };
+    }
+    if (!pack.base) throw new Error("Corps de base introuvable : il faut le fichier base.obj (dossier 3dobjs).");
+    const n = pack.base.n;
+
+    // 2. cibles
+    const tEntries = all.filter(e => /\.target(\.gz)?$/.test(e.path) && e.path.includes("targets/"));
+    if (tEntries.length) {
+      const have = new Set(pack.targets.map(t => t.path));
+      let k = 0;
+      for (const e of tEntries) {
+        const rel = e.path.slice(e.path.lastIndexOf("targets/") + 8).replace(/\.target(\.gz)?$/, "");
+        if (have.has(rel) || /^(expression|units)\//.test(rel)) continue;
+        try { pack.targets.push({ path: rel, ...parseTarget(await text(e), n) }); have.add(rel); } catch (err) { /* cible ignorée */ }
+        if (++k % 60 === 0) log(`Curseurs : ${k} / ${tEntries.length}`);
+      }
+      log(`${pack.targets.length} déformations disponibles.`);
+    }
+
+    // 3. proxys (yeux, cils, sourcils, cheveux, dents, langue, sexe)
+    for (const e of all.filter(x => /\.mhclo(\.gz)?$/.test(x.path))) {
+      const kind = proxyKind(e.path);
+      if (!kind) continue;
+      const id = e.path;
+      if (pack.proxies.some(p => p.id === id)) continue;
+      try {
+        const m = parseMhclo(await text(e));
+        const d0 = dir(e.path);
+        const oe = m.obj ? find(d0, m.obj) : byPath.get(e.path.replace(/\.mhclo(\.gz)?$/, ".obj"));
+        if (!oe) continue;
+        const obj = parseOBJ(await text(oe));
+        const nv = obj.pos.length / 3;
+        if (m.refs.length < nv) continue;
+        const ref = new Uint32Array(nv * 3), w = new Float32Array(nv * 3), off = new Float32Array(nv * 3);
+        for (let i = 0; i < nv; i++) {
+          const r = m.refs[i];
+          ref.set([r[0], r[1], r[2]], i * 3); w.set([r[3], r[4], r[5]], i * 3); off.set([r[6], r[7], r[8]], i * 3);
+        }
+        if (ref.some(i => i >= n)) continue;
+        let tex = null, color = null, alpha = false;
+        const me = m.mat ? find(d0, m.mat) : null;
+        if (me) {
+          const mat = parseMhmat(await text(me));
+          color = mat.color || null; alpha = !!mat.alpha;
+          if (mat.tex) { const te = find(dir(me.path), mat.tex); if (te) tex = await blobOf(te); }
+        }
+        const rend = buildRender(obj, null);
+        pack.proxies.push({ id, kind, name: m.name || base(e.path).replace(/\.mhclo(\.gz)?$/, ""), ref, w, off, scales: m.scales, nv, ...rend, tex, color, alpha: alpha || kind === "hair" || kind === "eyelashes" || kind === "eyebrows" });
+      } catch (err) { /* proxy ignoré */ }
+    }
+
+    // 4. peaux (textures pour le corps)
+    for (const e of all.filter(x => /\.mhmat(\.gz)?$/.test(x.path) && /\/skins\//.test(x.path))) {
+      if (pack.skins.some(s => s.id === e.path)) continue;
+      try {
+        const mat = parseMhmat(await text(e));
+        if (!mat.tex) continue;
+        const te = find(dir(e.path), mat.tex);
+        if (te) pack.skins.push({ id: e.path, name: mat.name || base(e.path).replace(".mhmat", ""), tex: await blobOf(te) });
+      } catch (err) {}
+    }
+    return pack;
+  }
+
+  /* ---------- variables "macro" ---------- */
+  const three = v => v < 0.5 ? [1 - v / 0.5, v / 0.5, 0] : [0, 1 - (v - 0.5) / 0.5, (v - 0.5) / 0.5];
+  function ageW(v) {
+    const b = [0, 0.1875, 0.5, 1], w = [0, 0, 0, 0];
+    for (let i = 0; i < 3; i++) if (v >= b[i] && v <= b[i + 1]) { const t = (v - b[i]) / (b[i + 1] - b[i]); w[i] = 1 - t; w[i + 1] = t; break; }
+    return w;
+  }
+  const TOK = {
+    female: ["gender", 0], male: ["gender", 1],
+    baby: ["age", 0], child: ["age", 1], young: ["age", 2], old: ["age", 3],
+    minmuscle: ["muscle", 0], averagemuscle: ["muscle", 1], maxmuscle: ["muscle", 2],
+    minweight: ["weight", 0], averageweight: ["weight", 1], maxweight: ["weight", 2],
+    minheight: ["height", 0], averageheight: ["height", 1], maxheight: ["height", 2],
+    uncommonproportions: ["prop", 0], regularproportions: ["prop", 1], idealproportions: ["prop", 2],
+    mincup: ["cup", 0], averagecup: ["cup", 1], maxcup: ["cup", 2],
+    minfirmness: ["firm", 0], averagefirmness: ["firm", 1], maxfirmness: ["firm", 2],
+    african: ["race", 0], asian: ["race", 1], caucasian: ["race", 2]
+  };
+  function macroWeights(M) {
+    const r = M.race, rs = r[0] + r[1] + r[2] || 1;
+    return {
+      gender: [1 - M.gender, M.gender], age: ageW(M.age), muscle: three(M.muscle), weight: three(M.weight),
+      height: three(M.height), prop: three(M.prop), cup: three(M.cup), firm: three(M.firm), race: r.map(x => x / rs)
+    };
+  }
+  /* âge en années <-> valeur MakeHuman (25 ans = 0,5) */
+  const yearsToV = y => y < 11 ? 0.1875 * (y - 1) / 10 : y < 25 ? 0.1875 + (y - 11) / 14 * 0.3125 : 0.5 + (y - 25) / 65 * 0.5;
+
+  /* ---------- curseurs automatiques ---------- */
+  const NEG = new Set(["decr", "less", "in", "down", "backward", "back", "small", "narrow", "short", "compress", "concave", "min", "flat", "thin", "close", "light", "lower", "low", "minus", "smaller", "left", "inward", "under", "deflate", "contract"]);
+  function buildSliders(targets) {
+    const macro = [], groups = new Map();
+    targets.forEach((t, i) => {
+      const parts = t.path.split("/"), file = parts.pop(), folder = parts.join("/");
+      const toks = (folder ? folder.split(/[\/-]/) : []).concat(file.split("-"));
+      if (toks.some(x => TOK[x])) { macro.push({ i, toks: toks.filter(x => TOK[x]).map(x => TOK[x]) }); return; }
+      const ft = file.split("-");
+      const last = ft.length > 1 ? ft[ft.length - 1] : "";
+      const stem = folder + "/" + (ft.length > 1 ? ft.slice(0, -1).join("-") : file);
+      if (!groups.has(stem)) groups.set(stem, []);
+      groups.get(stem).push({ i, last });
+    });
+    const sliders = [];
+    for (const [stem, g] of groups) {
+      if (g.length === 2) {
+        let neg = g.find(x => NEG.has(x.last)) || g.slice().sort((a, b) => a.last.localeCompare(b.last))[0];
+        const pos = g.find(x => x !== neg);
+        sliders.push({ key: stem, neg: neg.i, pos: pos.i, bi: true, negName: neg.last, posName: pos.last });
+      } else if (g.length === 1) {
+        sliders.push({ key: g[0].last ? stem + "-" + g[0].last : stem, pos: g[0].i, bi: false });
+      } else g.forEach(x => sliders.push({ key: stem + "-" + x.last, pos: x.i, bi: false }));
+    }
+    sliders.forEach(s => {
+      const parts = s.key.split("/"), file = parts.pop();
+      s.folder = parts.join("/");
+      const ft = file.split("-");
+      s.side = ft[0] === "r" || ft[0] === "l" ? ft[0] : null;
+      s.sym = s.side ? s.folder + "/*-" + ft.slice(1).join("-") : null;
+      s.words = s.side ? ft.slice(1) : ft;
+    });
+    return { macro, sliders };
+  }
+
+  /* ---------- évaluation du maillage ---------- */
+  function evaluate(pack, S, model, out) {
+    const P = out || new Float32Array(pack.base.pos.length);
+    P.set(pack.base.pos);
+    const add = (t, w) => {
+      if (!w) return;
+      const k = w * t.s, idx = t.idx, d = t.d;
+      for (let j = 0, m = idx.length; j < m; j++) {
+        const o = idx[j] * 3, q = j * 3;
+        P[o] += d[q] * k; P[o + 1] += d[q + 1] * k; P[o + 2] += d[q + 2] * k;
+      }
+    };
+    const MW = macroWeights(S.macro);
+    for (const m of model.macro) {
+      let w = 1;
+      for (const [v, i] of m.toks) { w *= MW[v][i]; if (!w) break; }
+      add(pack.targets[m.i], w);
+    }
+    for (const s of model.sliders) {
+      const v = S.sl[s.key] || 0;
+      if (!v) continue;
+      if (s.bi) { if (v < 0) add(pack.targets[s.neg], -v); else add(pack.targets[s.pos], v); }
+      else add(pack.targets[s.pos], Math.max(0, v));
+    }
+    return P;
+  }
+
+  /* centre d'un groupe d'articulation */
+  function jointPos(pack, P, name) {
+    const g = pack.base.groups[name];
+    if (!g || !g.length) return null;
+    let x = 0, y = 0, z = 0;
+    for (const i of g) { x += P[i * 3]; y += P[i * 3 + 1]; z += P[i * 3 + 2]; }
+    return [x / g.length, y / g.length, z / g.length];
+  }
+
+  /* ---------- chaînes de doigts / orteils ---------- */
+  function findChains(pack) {
+    const chains = [];
+    for (const side of ["l", "r"]) for (const kind of ["finger", "toe"]) for (let f = 1; f <= 5; f++) {
+      const js = [];
+      for (let k = 1; k <= 5; k++) { const nm = `joint-${side}-${kind}-${f}-${k}`; if (pack.base.groups[nm]) js.push(nm); }
+      if (js.length >= 2) chains.push({ side, kind, f, joints: js });
+    }
+    return chains;
+  }
+  /* attribution des sommets du corps aux segments (sur la pose de base) */
+  function assignChains(pack, chains, P) {
+    const isBody = new Uint8Array(pack.base.n);
+    pack.base.triBase.forEach(i => isBody[i] = 1);
+    const segs = [];
+    chains.forEach((c, ci) => {
+      const J = c.joints.map(nm => jointPos(pack, P, nm));
+      for (let k = 0; k + 1 < J.length; k++) segs.push({ ci, k, a: J[k], b: J[k + 1], side: c.side, kind: c.kind });
+    });
+    const seg = new Int32Array(pack.base.n).fill(-1);
+    for (let i = 0; i < pack.base.n; i++) {
+      if (!isBody[i]) continue;
+      const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2];
+      let best = -1, bd = Infinity;
+      for (let s = 0; s < segs.length; s++) {
+        const { a, b } = segs[s];
+        const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], L2 = ab[0] ** 2 + ab[1] ** 2 + ab[2] ** 2;
+        const t = ((x - a[0]) * ab[0] + (y - a[1]) * ab[1] + (z - a[2]) * ab[2]) / L2;
+        const L = Math.sqrt(L2);
+        const isFirst = segs[s].k === 0;
+        if (t < (isFirst ? -0.15 : -0.6) || t > 1.6) continue;
+        const tc = Math.min(1, Math.max(0, t));
+        const dx = x - (a[0] + ab[0] * tc), dy = y - (a[1] + ab[1] * tc), dz = z - (a[2] + ab[2] * tc);
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d < Math.max(0.55 * L, 0.12) && d < bd) { bd = d; best = s; }
+      }
+      seg[i] = best;
+    }
+    return { segs: segs.map(s => ({ ci: s.ci, k: s.k })), seg };
+  }
+  /* applique longueur / épaisseur par phalange, en cascade le long du doigt */
+  function deformChains(pack, chains, asg, B, P) {
+    if (!asg) return;
+    const J = chains.map(c => c.joints.map(nm => jointPos(pack, P, nm)));
+    const nJ = chains.map((c, ci) => {
+      const jj = J[ci], out = [jj[0]];
+      for (let k = 0; k + 1 < jj.length; k++) {
+        const v = B[`${c.kind}:${c.side}:${c.f}:${k}`] || { l: 1, t: 1 };
+        const a = jj[k], b = jj[k + 1];
+        out.push([out[k][0] + (b[0] - a[0]) * v.l, out[k][1] + (b[1] - a[1]) * v.l, out[k][2] + (b[2] - a[2]) * v.l]);
+      }
+      return out;
+    });
+    let any = false;
+    for (const c of chains) for (let k = 0; k + 1 < c.joints.length; k++) { const v = B[`${c.kind}:${c.side}:${c.f}:${k}`]; if (v && (v.l !== 1 || v.t !== 1)) any = true; }
+    if (!any) return;
+    const { segs, seg } = asg;
+    for (let i = 0; i < seg.length; i++) {
+      const s = seg[i];
+      if (s < 0) continue;
+      const { ci, k } = segs[s], c = chains[ci];
+      const a = J[ci][k], b = J[ci][k + 1], na = nJ[ci][k];
+      const v = B[`${c.kind}:${c.side}:${c.f}:${k}`] || { l: 1, t: 1 };
+      const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], L2 = ab[0] ** 2 + ab[1] ** 2 + ab[2] ** 2;
+      const x = P[i * 3] - a[0], y = P[i * 3 + 1] - a[1], z = P[i * 3 + 2] - a[2];
+      const t = (x * ab[0] + y * ab[1] + z * ab[2]) / L2;
+      const rx = x - ab[0] * t, ry = y - ab[1] * t, rz = z - ab[2] * t;
+      // au-delà de la dernière articulation : bout du doigt, on garde la longueur et suit l'extrémité
+      const tl = t <= 1 ? t * v.l : v.l + (t - 1);
+      // épaisseur adoucie près des articulations pour éviter les marches
+      const prev = k > 0 ? (B[`${c.kind}:${c.side}:${c.f}:${k - 1}`] || { t: 1 }).t : 1;
+      const tt = t < 0.15 && k > 0 ? prev + (v.t - prev) * Math.max(0, (t + 0.15) / 0.3) : v.t;
+      P[i * 3] = na[0] + ab[0] * tl + rx * tt;
+      P[i * 3 + 1] = na[1] + ab[1] * tl + ry * tt;
+      P[i * 3 + 2] = na[2] + ab[2] * tl + rz * tt;
+    }
+  }
+
+  /* ---------- ajustement d'un proxy sur le corps ---------- */
+  function fitProxy(pack, px, P, out, offMul) {
+    const B = pack.base.pos, n = px.nv, R = out || new Float32Array(n * 3);
+    const sc = [1, 1, 1];
+    for (let a = 0; a < 3; a++) {
+      const s = px.scales[a];
+      if (s && s[2]) sc[a] = Math.abs(P[s[0] * 3 + a] - P[s[1] * 3 + a]) / s[2];
+    }
+    const m = offMul || 1;
+    for (let i = 0; i < n; i++) {
+      const q = i * 3, a = px.ref[q] * 3, b = px.ref[q + 1] * 3, c = px.ref[q + 2] * 3;
+      const wa = px.w[q], wb = px.w[q + 1], wc = px.w[q + 2];
+      for (let k = 0; k < 3; k++) R[q + k] = wa * P[a + k] + wb * P[b + k] + wc * P[c + k] + px.off[q + k] * sc[k] * m;
+    }
+    return R;
+  }
+
+  /* normales par sommet (sur la topologie source) */
+  function normals(P, triBase, nVerts, out) {
+    const N = out || new Float32Array(nVerts * 3);
+    N.fill(0);
+    for (let t = 0; t < triBase.length; t += 3) {
+      const a = triBase[t] * 3, b = triBase[t + 1] * 3, c = triBase[t + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+      const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      N[a] += nx; N[a + 1] += ny; N[a + 2] += nz; N[b] += nx; N[b + 1] += ny; N[b + 2] += nz; N[c] += nx; N[c + 1] += ny; N[c + 2] += nz;
+    }
+    for (let i = 0; i < N.length; i += 3) {
+      const l = Math.hypot(N[i], N[i + 1], N[i + 2]) || 1;
+      N[i] /= l; N[i + 1] /= l; N[i + 2] /= l;
+    }
+    return N;
+  }
+
+  /* ---------- pack binaire (pour le téléphone) ---------- */
+  async function packToBlob(pack) {
+    const parts = [];
+    const enc = v => {
+      if (ArrayBuffer.isView(v)) { parts.push(v); return { $t: v.constructor.name, $i: parts.length - 1 }; }
+      if (v instanceof Blob) { parts.push(v); return { $t: "Blob", $m: v.type, $i: parts.length - 1 }; }
+      if (Array.isArray(v)) return v.map(enc);
+      if (v && typeof v === "object") { const o = {}; for (const k in v) o[k] = enc(v[k]); return o; }
+      return v;
+    };
+    const head = enc(pack);
+    const sizes = parts.map(p => p.byteLength !== undefined ? p.byteLength : p.size);
+    const json = new TextEncoder().encode(JSON.stringify({ head, sizes }));
+    const pad = n => (8 - (n % 8)) % 8;
+    const hdr = new Uint8Array(16);
+    hdr.set(new TextEncoder().encode("ATPERSO1"));
+    new DataView(hdr.buffer).setUint32(8, json.length, true);
+    const blobs = [hdr, json, new Uint8Array(pad(json.length))];
+    parts.forEach((p, i) => { blobs.push(p); blobs.push(new Uint8Array(pad(sizes[i]))); });
+    return new Blob(blobs, { type: "application/octet-stream" });
+  }
+  async function packFromBuffer(buf) {
+    const u8 = new Uint8Array(buf);
+    if (td.decode(u8.subarray(0, 8)) !== "ATPERSO1") throw new Error("Fichier pack non reconnu");
+    const jl = new DataView(buf).getUint32(8, true);
+    const { head, sizes } = JSON.parse(td.decode(u8.subarray(16, 16 + jl)));
+    const pad = n => (8 - (n % 8)) % 8;
+    let off = 16 + jl + pad(jl);
+    const parts = sizes.map(s => { const o = off; off += s + pad(s); return [o, s]; });
+    const T = { Float32Array, Uint32Array, Uint16Array, Int16Array, Uint8Array, Int32Array };
+    const dec = v => {
+      if (Array.isArray(v)) return v.map(dec);
+      if (v && typeof v === "object") {
+        if (v.$t) {
+          const [o, s] = parts[v.$i];
+          if (v.$t === "Blob") return new Blob([buf.slice(o, o + s)], { type: v.$m });
+          const C = T[v.$t];
+          return new C(buf.slice(o, o + s));
+        }
+        const r = {}; for (const k in v) r[k] = dec(v[k]); return r;
+      }
+      return v;
+    };
+    return dec(head);
+  }
+
+  return { readZip, importEntries, buildSliders, evaluate, jointPos, findChains, assignChains, deformChains, fitProxy, normals, yearsToV, packToBlob, packFromBuffer, parseOBJ, parseTarget, parseMhclo, buildRender, inflate };
+})();
+
+
+/* ================= RENDU WebGL2 maison (aucune bibliothèque) ================= */
+const View3D = (canvas) => {
+  const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, preserveDrawingBuffer: true });
+  if (!gl) return null;
+  const VS = `#version 300 es
+  in vec3 aP; in vec3 aN; in vec2 aUV;
+  uniform mat4 uVP; uniform mat4 uM;
+  out vec3 vN; out vec3 vW; out vec2 vUV;
+  void main(){ vec4 w = uM * vec4(aP,1.0); vW = w.xyz; vN = mat3(uM) * aN; vUV = aUV; gl_Position = uVP * w; }`;
+  const FS = `#version 300 es
+  precision highp float;
+  in vec3 vN; in vec3 vW; in vec2 vUV;
+  uniform vec3 uColor; uniform sampler2D uTex; uniform int uMode; uniform float uAlphaTest;
+  uniform float uRough; uniform float uWrap; uniform vec3 uCam; uniform float uSheen;
+  out vec4 o;
+  vec3 lin(vec3 c){ return pow(c, vec3(2.2)); }
+  void main(){
+    if(uMode == 2){ float d = length(vUV - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, d) * 0.28; o = vec4(vec3(0.0), a); return; }
+    vec4 base = vec4(lin(uColor), 1.0);
+    if(uMode == 1){ vec4 t = texture(uTex, vUV); base.rgb *= lin(t.rgb); base.a = t.a; if(base.a < uAlphaTest) discard; }
+    vec3 N = normalize(vN); if(!gl_FrontFacing) N = -N;
+    vec3 V = normalize(uCam - vW);
+    vec3 Ls[3] = vec3[3](normalize(vec3(-0.5,0.8,0.9)), normalize(vec3(0.8,0.3,0.6)), normalize(vec3(0.1,0.5,-1.0)));
+    vec3 Cs[3] = vec3[3](vec3(1.0,0.96,0.9)*2.2, vec3(0.75,0.82,1.0)*0.8, vec3(1.0)*1.3);
+    vec3 col = base.rgb * mix(vec3(0.16,0.15,0.14), vec3(0.32,0.34,0.38), N.y*0.5+0.5);
+    float sp = mix(64.0, 8.0, uRough);
+    for(int i=0;i<3;i++){
+      float d = max(0.0, (dot(N,Ls[i]) + uWrap) / (1.0 + uWrap));
+      vec3 H = normalize(Ls[i] + V);
+      float s = pow(max(0.0, dot(N,H)), sp) * (1.0 - uRough) * 0.6;
+      col += Cs[i] * (base.rgb * d * 0.32 + s * d);
+    }
+    if(uSheen > 0.0){ float r = 1.0 - max(0.0, dot(N, V)); col += base.rgb * pow(r, 3.0) * uSheen * vec3(1.0,0.55,0.45); }
+    col = col / (col + vec3(0.85)) * 1.15;
+    o = vec4(pow(col, vec3(1.0/2.2)), base.a);
+  }`;
+  const sh = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); return x; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.bindAttribLocation(prog, 0, "aP"); gl.bindAttribLocation(prog, 1, "aN"); gl.bindAttribLocation(prog, 2, "aUV");
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  const U = {}; ["uVP", "uM", "uColor", "uTex", "uMode", "uAlphaTest", "uRough", "uWrap", "uCam", "uSheen"].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+  /* ---------- matrices ---------- */
+  const persp = (f, a, n, fa) => { const t = 1 / Math.tan(f / 2); return [t / a, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]; };
+  const look = (e, c, u) => {
+    let z = [e[0] - c[0], e[1] - c[1], e[2] - c[2]]; let l = Math.hypot(...z); z = z.map(v => v / l);
+    let x = [u[1] * z[2] - u[2] * z[1], u[2] * z[0] - u[0] * z[2], u[0] * z[1] - u[1] * z[0]]; l = Math.hypot(...x); x = x.map(v => v / l);
+    const y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]];
+    return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -(x[0] * e[0] + x[1] * e[1] + x[2] * e[2]), -(y[0] * e[0] + y[1] * e[1] + y[2] * e[2]), -(z[0] * e[0] + z[1] * e[1] + z[2] * e[2]), 1];
+  };
+  const mul = (a, b) => { const r = new Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; r[i * 4 + j] = s; } return r; };
+  const I4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+  /* ---------- objets ---------- */
+  const objs = new Map();
+  function setMesh(id, { uv, tri, nRender }) {
+    let o = objs.get(id);
+    if (o) { gl.deleteVertexArray(o.vao); [o.pb, o.nb, o.ub, o.ib].forEach(b => gl.deleteBuffer(b)); }
+    o = Object.assign(o || { color: [0.8, 0.8, 0.8], tex: null, alphaTest: 0, rough: 0.6, wrap: 0, sheen: 0, visible: true, order: 0 }, { n: nRender, count: tri.length });
+    o.vao = gl.createVertexArray(); gl.bindVertexArray(o.vao);
+    o.pb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o.pb); gl.bufferData(gl.ARRAY_BUFFER, nRender * 12, gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    o.nb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o.nb); gl.bufferData(gl.ARRAY_BUFFER, nRender * 12, gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+    o.ub = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o.ub); gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0);
+    o.ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, o.ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tri, gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    objs.set(id, o);
+    return o;
+  }
+  function update(id, pos, nrm) {
+    const o = objs.get(id); if (!o) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, o.pb); gl.bufferSubData(gl.ARRAY_BUFFER, 0, pos);
+    gl.bindBuffer(gl.ARRAY_BUFFER, o.nb); gl.bufferSubData(gl.ARRAY_BUFFER, 0, nrm);
+    o.pos = pos; o.nrm = nrm;
+  }
+  function remove(id) { const o = objs.get(id); if (!o) return; gl.deleteVertexArray(o.vao); [o.pb, o.nb, o.ub, o.ib].forEach(b => gl.deleteBuffer(b)); objs.delete(id); }
+  const texCache = new WeakMap();
+  async function texture(src) {
+    if (!src) return null;
+    if (texCache.has(src)) return texCache.get(src);
+    const img = src instanceof Blob ? await createImageBitmap(src, { imageOrientation: "flipY" }) : await createImageBitmap(src, { imageOrientation: "flipY" });
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    texCache.set(src, t);
+    return t;
+  }
+  // sol : disque d'ombre douce
+  const ground = setMesh("__ground", { uv: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), tri: new Uint32Array([0, 1, 2, 0, 2, 3]), nRender: 4 });
+  ground.mode = 2;
+
+  /* ---------- caméra orbitale ---------- */
+  const cam = { yaw: 0.35, pitch: 0.08, dist: 26, target: [0, 8.5, 0], fov: 0.62 };
+  let groundY = 0, dirty = true;
+  function setGround(y, r) {
+    groundY = y;
+    const p = new Float32Array([-r, y, -r, r, y, -r, r, y, r, -r, y, r]);
+    update("__ground", p, new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]));
+  }
+  function camPos() {
+    const c = Math.cos(cam.pitch);
+    return [cam.target[0] + cam.dist * c * Math.sin(cam.yaw), cam.target[1] + cam.dist * Math.sin(cam.pitch), cam.target[2] + cam.dist * c * Math.cos(cam.yaw)];
+  }
+  function frame() {
+    if (!dirty) return;
+    dirty = false;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(canvas.clientWidth * dpr)), h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    gl.viewport(0, 0, w, h);
+    const bg = getComputedStyle(canvas).getPropertyValue("--bg3d").trim() || "#2a2d33";
+    const m = bg.match(/#(..)(..)(..)/);
+    const rgb = m ? [1, 2, 3].map(i => parseInt(m[i], 16) / 255) : [0.17, 0.18, 0.2];
+    gl.clearColor(rgb[0], rgb[1], rgb[2], 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.useProgram(prog);
+    const e = camPos();
+    const VP = mul(persp(cam.fov, w / h, cam.dist * 0.02, cam.dist * 10 + 100), look(e, cam.target, [0, 1, 0]));
+    gl.uniformMatrix4fv(U.uVP, false, VP); gl.uniformMatrix4fv(U.uM, false, I4); gl.uniform3fv(U.uCam, e);
+    gl.uniform1i(U.uTex, 0);
+    const list = [...objs.entries()].filter(([k, o]) => k !== "__ground" && o.visible && o.pos).map(([, o]) => o).sort((a, b) => a.order - b.order);
+    const draw = o => {
+      gl.uniform3fv(U.uColor, o.color); gl.uniform1f(U.uRough, o.rough); gl.uniform1f(U.uWrap, o.wrap); gl.uniform1f(U.uSheen, o.sheen);
+      gl.uniform1f(U.uAlphaTest, o.alphaTest);
+      gl.uniform1i(U.uMode, o.mode === 2 ? 2 : o.tex ? 1 : 0);
+      if (o.tex) { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, o.tex); }
+      gl.bindVertexArray(o.vao); gl.drawElements(gl.TRIANGLES, o.count, gl.UNSIGNED_INT, 0);
+    };
+    gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE);
+    list.filter(o => !o.blend).forEach(draw);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false); draw(ground); gl.depthMask(true);
+    list.filter(o => o.blend).forEach(o => { const at = o.alphaTest; o.alphaTest = 0.02; gl.depthMask(false); draw(o); gl.depthMask(true); o.alphaTest = at; draw(o); });
+    gl.disable(gl.BLEND);
+  }
+  function loop() { frame(); requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+  new ResizeObserver(() => { dirty = true; }).observe(canvas);
+
+  /* ---------- interactions ---------- */
+  const ptrs = new Map(); let last = null;
+  canvas.addEventListener("pointerdown", e => { canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); last = null; });
+  canvas.addEventListener("pointermove", e => {
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 1) {
+      const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
+      if (e.buttons === 2 || e.shiftKey) pan(dx, dy);
+      else { cam.yaw -= dx * 0.008; cam.pitch = Math.max(-1.3, Math.min(1.3, cam.pitch + dy * 0.006)); }
+    } else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]), mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      if (last) { cam.dist = Math.max(1.5, Math.min(80, cam.dist * last.d / d)); pan(mid[0] - last.mid[0], mid[1] - last.mid[1]); }
+      last = { d, mid };
+    }
+    dirty = true;
+  });
+  const up = e => { ptrs.delete(e.pointerId); last = null; };
+  canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
+  canvas.addEventListener("contextmenu", e => e.preventDefault());
+  canvas.addEventListener("wheel", e => { e.preventDefault(); cam.dist = Math.max(1.5, Math.min(80, cam.dist * (e.deltaY > 0 ? 1.1 : 0.9))); dirty = true; }, { passive: false });
+  function pan(dx, dy) {
+    const s = cam.dist * 0.0016;
+    const right = [Math.cos(cam.yaw), 0, -Math.sin(cam.yaw)];
+    cam.target[0] -= right[0] * dx * s; cam.target[2] -= right[2] * dx * s; cam.target[1] += dy * s;
+  }
+  function focus(target, dist, yaw) {
+    const from = { t: cam.target.slice(), d: cam.dist, y: cam.yaw }, t0 = performance.now();
+    const red = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const step = now => {
+      const k = red ? 1 : Math.min(1, (now - t0) / 450), e = k * k * (3 - 2 * k);
+      cam.target = from.t.map((v, i) => v + (target[i] - v) * e); cam.dist = from.d + (dist - from.d) * e;
+      if (yaw !== undefined) cam.yaw = from.y + (yaw - from.y) * e;
+      dirty = true; if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  return { gl, objs, setMesh, update, remove, texture, setGround, focus, cam, redraw: () => { dirty = true; }, snapshot: () => { dirty = true; frame(); return canvas.toDataURL("image/png"); } };
+};
+
+/* ================= APPLICATION ================= */
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+let tt; const toast = m => { const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 2600); };
+const AGE_MIN = 20, AGE_MAX = 90;
+
+/* ---------- traduction des libellés ---------- */
+const FR = { head: "tête", scale: "taille", horiz: "largeur", vert: "hauteur", depth: "profondeur", trans: "position", age: "âge", angle: "angle", oval: "ovale", round: "rond", rectangular: "rectangulaire", square: "carré", triangular: "triangulaire", invertedtriangle: "triangle inversé", diamond: "losange", fat: "gras", back: "arrière", forehead: "front", temple: "tempe", nubian: "relief", eye: "œil", eyes: "yeux", bag: "poche", height: "hauteur", height1: "hauteur haut", height2: "hauteur milieu", height3: "hauteur bas", push1: "pli haut", push2: "pli bas", move: "déplacer", size: "taille", corner: "coin", corner1: "coin interne", corner2: "coin externe", epicanthus: "épicanthus", eyefold: "pli", slant: "inclinaison", nose: "nez", nostrils: "narines", tip: "bout", point: "pointe", septumangle: "septum", width: "largeur", width1: "largeur haut", width2: "largeur milieu", width3: "largeur bas", base: "base", bridge: "arête", hump: "bosse", greek: "grec", compression: "compression", curve: "courbe", flaring: "évasement", mouth: "bouche", lowerlip: "lèvre inf.", upperlip: "lèvre sup.", lip: "lèvre", lips: "lèvres", cupidsbow: "arc de cupidon", dimples: "fossettes", laugh: "rire", lines: "plis", philtrum: "philtrum", volume: "volume", ears: "oreilles", ear: "oreille", lobe: "lobe", flap: "pavillon", wing: "aile", chin: "menton", jut: "avancée", cleft: "fossette", prominent: "proéminence", bones: "os", cheek: "joue", inner: "intérieur", outer: "extérieur", neck: "cou", torso: "torse", vshape: "forme en V", muscle: "muscle", dorsi: "dorsaux", pectoral: "pectoraux", stomach: "ventre", pregnant: "grossesse", navel: "nombril", hip: "hanches", waist: "taille", buttocks: "fesses", pelvis: "bassin", tone: "tonicité", bulge: "galbe", breast: "poitrine", nipple: "téton", areola: "aréole", dist: "écart", trans1: "position", hand: "main", hands: "mains", fingers: "doigts", finger: "doigt", diameter: "diamètre", distance: "écart", length: "longueur", foot: "pied", toes: "orteils", lowerarm: "avant-bras", upperarm: "bras", lowerleg: "mollet", upperleg: "cuisse", leg: "jambe", legs: "jambes", arm: "bras", knee: "genou", elbow: "coude", wrist: "poignet", ankle: "cheville", calf: "mollet", thigh: "cuisse", shoulder: "épaule", fat: "gras", measure: "mesure", circ: "tour", bust: "poitrine", underbust: "sous-poitrine", hips: "hanches", front: "devant", r: "", l: "", up: "haut", down: "bas", in: "dedans", out: "dehors", forward: "avant", backward: "arrière", incr: "", decr: "", more: "", less: "", genitals: "sexe", genital: "sexe", penis: "pénis", testicles: "testicules", vulva: "vulve", labia: "lèvres", clitoris: "clitoris", pubic: "pubis", shape: "forme", firmness: "fermeté", girth: "épaisseur", curvature: "courbure", eyebrows: "sourcils", eyebrow: "sourcil" };
+const tr = w => (FR[w] !== undefined ? FR[w] : w);
+const label = words => { const s = words.map(tr).filter(Boolean).join(" ").replace(/\s+/g, " ").trim(); return s ? s[0].toUpperCase() + s.slice(1) : "Réglage"; };
+
+/* ---------- catégories ---------- */
+const TAB_OF = {
+  head: ["visage", "Tête"], forehead: ["visage", "Front"], eyebrows: ["visage", "Sourcils"], eyes: ["visage", "Yeux"], nose: ["visage", "Nez"], mouth: ["visage", "Bouche"], ears: ["visage", "Oreilles"], chin: ["visage", "Menton"], cheek: ["visage", "Joues"],
+  neck: ["corps", "Cou"], torso: ["corps", "Torse"], stomach: ["corps", "Ventre"], hip: ["corps", "Hanches"], buttocks: ["corps", "Fesses"], measure: ["corps", "Mesures"],
+  pelvis: ["intime", "Bassin"], breast: ["intime", "Poitrine"], genitals: ["intime", "Sexe"]
+};
+function catOf(s) {
+  const f = s.folder.split("/")[0], w = s.words.join(" ");
+  if (/nipple|areola/.test(w)) return ["intime", "Poitrine"];
+  if (/genital|penis|vulva|labia|testic/.test(w + f)) return ["intime", "Sexe"];
+  if (f === "armslegs" || f === "arms" || f === "legs") {
+    if (/hand|finger|thumb|wrist/.test(w)) return ["membres", "Mains"];
+    if (/foot|toe|ankle/.test(w)) return ["membres", "Pieds"];
+    if (/leg|knee|calf|thigh/.test(w)) return ["membres", "Jambes"];
+    return ["membres", "Bras"];
+  }
+  return TAB_OF[f] || ["corps", "Autres · " + f];
+}
+
+/* ---------- état ---------- */
+const DEF = () => ({
+  macro: { gender: 0.5, age: 25, muscle: 0.5, weight: 0.5, height: 0.5, prop: 0.5, cup: 0.5, firm: 0.5, race: [0.33, 0.33, 0.34] },
+  sl: {}, bones: {}, glob: { finger: { l: 1, t: 1 }, toe: { l: 1, t: 1 } }, sym: true,
+  sel: { hair: null, eyebrows: null, eyelashes: null, eyes: null, teeth: null, tongue: null, genitals: null },
+  gen: { size: 1, len: 1, girth: 1 },
+  eye: { color: "#5b6e3c", iris: 0.42, pupil: 0.34, sclera: "#f2ede6", orig: false },
+  lash: 1, brow: "#2c2118",
+  skin: { color: "#d6a184", rough: 0.55, tex: null },
+  hair: { color: "#3a2a1d", tint: true }
+});
+let S = DEF();
+let pack = null, model = null, chains = [], asg = null, view = null, bodyVerts = null, heightCm = 0;
+let P = null, N = null;
+const LS = "atelier-perso-v1";
+const saveS = () => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} };
+try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s && s.macro) S = Object.assign(DEF(), s); } catch (e) {}
+
+/* ---------- IndexedDB ---------- */
+const idb = (mode, fn) => new Promise((res, rej) => {
+  const r = indexedDB.open("atelier-perso", 1);
+  r.onupgradeneeded = () => r.result.createObjectStore("kv");
+  r.onsuccess = () => { const tx = r.result.transaction("kv", mode); const q = fn(tx.objectStore("kv")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); };
+  r.onerror = () => rej(r.error);
+});
+const dbGet = k => idb("readonly", s => s.get(k)).catch(() => null);
+const dbPut = (k, v) => idb("readwrite", s => s.put(v, k));
+const dbDel = k => idb("readwrite", s => s.delete(k)).catch(() => {});
+
+/* ---------- moteur ---------- */
+const macroForCore = () => ({ ...S.macro, age: Core.yearsToV(Math.max(AGE_MIN, S.macro.age)) });
+function bonesEff() {
+  const B = {};
+  for (const c of chains) for (let k = 0; k + 1 < c.joints.length; k++) {
+    const key = `${c.kind}:${c.side}:${c.f}:${k}`, src = S.sym ? `${c.kind}:r:${c.f}:${k}` : key;
+    const v = S.bones[src] || { l: 1, t: 1 }, g = S.glob[c.kind];
+    B[key] = { l: v.l * g.l, t: v.t * g.t };
+  }
+  return B;
+}
+let pending = false;
+function schedule() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; rebuild(); }); }
+function rebuild() {
+  if (!pack || !view) return;
+  const st = { macro: macroForCore(), sl: S.sl };
+  P = Core.evaluate(pack, st, model, P);
+  Core.deformChains(pack, chains, asg, bonesEff(), P);
+  N = Core.normals(P, pack.base.triBase, pack.base.n, N);
+  const b = pack.base, o = view.objs.get("body");
+  const pos = o.pos && o.pos.length === b.rv2v.length * 3 ? o.pos : new Float32Array(b.rv2v.length * 3), nrm = o.nrm && o.nrm.length === pos.length ? o.nrm : new Float32Array(pos.length);
+  for (let r = 0; r < b.rv2v.length; r++) { const v = b.rv2v[r] * 3, q = r * 3; pos[q] = P[v]; pos[q + 1] = P[v + 1]; pos[q + 2] = P[v + 2]; nrm[q] = N[v]; nrm[q + 1] = N[v + 1]; nrm[q + 2] = N[v + 2]; }
+  view.update("body", pos, nrm);
+  let minY = Infinity, maxY = -Infinity;
+  for (const i of bodyVerts) { const y = P[i * 3 + 1]; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  heightCm = (maxY - minY) * 10;
+  view.setGround(minY, (maxY - minY) * 0.45);
+  for (const kind in S.sel) {
+    const id = S.sel[kind], px = id && pack.proxies.find(p => p.id === id);
+    if (!px) continue;
+    const R = Core.fitProxy(pack, px, P, px._R, kind === "eyelashes" ? S.lash : 1);
+    px._R = R;
+    if (kind === "genitals") scaleGenital(R, px.nv);
+    const Np = Core.normals(R, px.triBase, px.nv, px._N); px._N = Np;
+    const ob = view.objs.get("px:" + kind);
+    if (!ob) continue;
+    const pp = ob.pos && ob.pos.length === px.rv2v.length * 3 ? ob.pos : new Float32Array(px.rv2v.length * 3), nn = ob.nrm && ob.nrm.length === pp.length ? ob.nrm : new Float32Array(pp.length);
+    for (let r = 0; r < px.rv2v.length; r++) { const v = px.rv2v[r] * 3, q = r * 3; pp[q] = R[v]; pp[q + 1] = R[v + 1]; pp[q + 2] = R[v + 2]; nn[q] = Np[v]; nn[q + 1] = Np[v + 1]; nn[q + 2] = Np[v + 2]; }
+    view.update("px:" + kind, pp, nn);
+  }
+  view.redraw();
+  const hv = $("hval"); if (hv) hv.textContent = Math.round(heightCm) + " cm";
+  saveS();
+}
+function scaleGenital(R, n) {
+  const g = S.gen; if (g.size === 1 && g.len === 1 && g.girth === 1) return;
+  let cx = 0, cy = 0, minZ = Infinity;
+  for (let i = 0; i < n; i++) { cx += R[i * 3]; cy += R[i * 3 + 1]; minZ = Math.min(minZ, R[i * 3 + 2]); }
+  cx /= n; cy /= n;
+  const sg = g.size * g.girth, sl = g.size * g.len;
+  for (let i = 0; i < n; i++) { R[i * 3] = cx + (R[i * 3] - cx) * sg; R[i * 3 + 1] = cy + (R[i * 3 + 1] - cy) * sg; R[i * 3 + 2] = minZ + (R[i * 3 + 2] - minZ) * sl; }
+}
+
+/* ---------- matériaux ---------- */
+let eyeTex = null;
+function eyeCanvas() {
+  const c = document.createElement("canvas"); c.width = c.height = 512;
+  const x = c.getContext("2d"), e = S.eye, R = 256 * e.iris * 2.0, Rp = R * e.pupil;
+  x.fillStyle = e.sclera; x.fillRect(0, 0, 512, 512);
+  const vg = x.createRadialGradient(256, 256, R * 1.2, 256, 256, 256); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(160,60,50,0.18)");
+  x.fillStyle = vg; x.fillRect(0, 0, 512, 512);
+  const [r, g, b] = hex2rgb(e.color).map(v => Math.round(v * 255));
+  const ig = x.createRadialGradient(256, 256, Rp, 256, 256, R);
+  ig.addColorStop(0, `rgb(${Math.min(255, r + 70)},${Math.min(255, g + 60)},${Math.min(255, b + 40)})`); ig.addColorStop(0.55, `rgb(${r},${g},${b})`); ig.addColorStop(0.92, `rgb(${r * 0.45 | 0},${g * 0.45 | 0},${b * 0.45 | 0})`); ig.addColorStop(1, "rgb(20,18,16)");
+  x.beginPath(); x.arc(256, 256, R, 0, Math.PI * 2); x.fillStyle = ig; x.fill();
+  x.strokeStyle = "rgba(255,255,255,0.10)"; x.lineWidth = 1.2;
+  for (let k = 0; k < 140; k++) { const a = k / 140 * Math.PI * 2 + (k % 3) * 0.01; x.beginPath(); x.moveTo(256 + Math.cos(a) * Rp * 1.05, 256 + Math.sin(a) * Rp * 1.05); x.lineTo(256 + Math.cos(a) * R * (0.82 + (k % 5) * 0.03), 256 + Math.sin(a) * R * (0.82 + (k % 5) * 0.03)); x.stroke(); }
+  x.beginPath(); x.arc(256, 256, Rp, 0, Math.PI * 2); x.fillStyle = "#070707"; x.fill();
+  x.beginPath(); x.arc(256 - R * 0.28, 256 - R * 0.3, R * 0.12, 0, Math.PI * 2); x.fillStyle = "rgba(255,255,255,0.55)"; x.fill();
+  return c;
+}
+async function applyMaterials() {
+  if (!view) return;
+  const body = view.objs.get("body");
+  if (body) {
+    const sk = S.skin.tex && pack.skins.find(s => s.id === S.skin.tex);
+    body.tex = sk ? await view.texture(sk.tex) : null;
+    body.color = sk ? [1, 1, 1].map((v, i) => 0.55 + 0.45 * hex2rgb(S.skin.color)[i]) : hex2rgb(S.skin.color);
+    body.rough = S.skin.rough; body.wrap = 0.45; body.sheen = 0.35;
+  }
+  for (const kind in S.sel) {
+    const o = view.objs.get("px:" + kind); if (!o) continue;
+    const px = pack.proxies.find(p => p.id === S.sel[kind]); if (!px) continue;
+    o.wrap = 0.2; o.sheen = 0;
+    if (kind === "eyes") {
+      if (S.eye.orig && px.tex) { o.tex = await view.texture(px.tex); }
+      else { const old = eyeTex; eyeTex = await view.texture(await createImageBitmap(eyeCanvas())); o.tex = eyeTex; if (old && old !== eyeTex) view.gl.deleteTexture(old); }
+      o.color = [1, 1, 1]; o.rough = 0.1; o.order = 1;
+    } else if (kind === "hair" || kind === "eyebrows" || kind === "eyelashes") {
+      o.tex = px.tex ? await view.texture(px.tex) : null;
+      const col = kind === "hair" ? S.hair.color : S.brow;
+      o.color = kind === "hair" && !S.hair.tint ? [1, 1, 1] : hex2rgb(col).map(v => px.tex ? Math.min(1, v * 2.2) : v);
+      o.alphaTest = 0.5; o.blend = !!px.tex; o.rough = 0.45; o.order = 3;
+    } else if (kind === "genitals") {
+      o.tex = null; o.color = hex2rgb(S.skin.color).map(v => v * 0.92); o.rough = S.skin.rough; o.wrap = 0.45; o.sheen = 0.35;
+    } else { o.tex = px.tex ? await view.texture(px.tex) : null; o.color = kind === "teeth" ? [0.95, 0.93, 0.88] : [0.75, 0.4, 0.42]; o.rough = 0.3; }
+  }
+  view.redraw();
+}
+function mountProxies() {
+  for (const kind in S.sel) {
+    view.remove("px:" + kind);
+    const px = S.sel[kind] && pack.proxies.find(p => p.id === S.sel[kind]);
+    if (!px) { S.sel[kind] = null; continue; }
+    view.setMesh("px:" + kind, { uv: px.uv, tri: px.tri, nRender: px.rv2v.length });
+  }
+}
+
+/* ---------- chargement des données ---------- */
+async function usePack(p) {
+  pack = p;
+  model = Core.buildSliders(pack.targets);
+  chains = Core.findChains(pack);
+  asg = chains.length ? Core.assignChains(pack, chains, pack.base.pos) : null;
+  bodyVerts = Uint32Array.from(new Set(pack.base.triBase));
+  // sélections par défaut
+  const first = k => (pack.proxies.find(p => p.kind === k) || {}).id || null;
+  for (const k of ["eyes", "eyebrows", "eyelashes", "teeth", "tongue"]) if (!S.sel[k] || !pack.proxies.some(p => p.id === S.sel[k])) S.sel[k] = first(k);
+  if (S.sel.hair && !pack.proxies.some(p => p.id === S.sel.hair)) S.sel.hair = null;
+  if (S.sel.genitals && !pack.proxies.some(p => p.id === S.sel.genitals)) S.sel.genitals = null;
+  view.remove("body");
+  view.setMesh("body", { uv: pack.base.uv, tri: pack.base.tri, nRender: pack.base.rv2v.length });
+  mountProxies();
+  $("empty").hidden = true;
+  rebuild(); await applyMaterials();
+  // cadrage
+  let minY = Infinity, maxY = -Infinity;
+  for (const i of bodyVerts) { const y = P[i * 3 + 1]; minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+  const h = maxY - minY; view.cam.target = [0, minY + h * 0.5, 0]; view.cam.dist = h * 1.95; view.redraw();
+  renderPanels();
+}
+function log(m) { const l = $("log"); if (l) { l.textContent = m; } $("emptyLog") && ($("emptyLog").textContent = m); }
+async function importFiles(entries) {
+  if (!entries.length) return;
+  $("busy").hidden = false;
+  try {
+    const p = pack ? pack : { base: null, targets: [], proxies: [], skins: [] };
+    await Core.importEntries(entries, p, m => { $("busyMsg").textContent = m; log(m); });
+    $("busyMsg").textContent = "Enregistrement dans l'appareil…";
+    try { await dbPut("pack", p); } catch (e) { toast("Données chargées, mais trop grosses pour être gardées ici : il faudra les recharger."); }
+    await usePack(p);
+    toast(`${p.targets.length} réglages de forme, ${p.proxies.length} accessoires chargés`);
+  } catch (e) { toast(e.message || "Import impossible"); log("Erreur : " + (e.message || e)); }
+  $("busy").hidden = true;
+}
+const fileEntries = files => [...files].map(f => ({ path: f.webkitRelativePath || f.name, get: async () => new Uint8Array(await f.arrayBuffer()) }));
+async function dropEntries(dt) {
+  const out = [], walk = (en, pre) => new Promise(res => {
+    if (en.isFile) en.file(f => { out.push({ path: pre + f.name, get: async () => new Uint8Array(await f.arrayBuffer()) }); res(); }, res);
+    else if (en.isDirectory) { const r = en.createReader(); const all = []; const read = () => r.readEntries(async es => { if (!es.length) { for (const x of all) await walk(x, pre + en.name + "/"); res(); } else { all.push(...es); read(); } }, res); read(); }
+    else res();
+  });
+  const items = [...dt.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (items.length) { for (const it of items) await walk(it, ""); return out; }
+  return fileEntries(dt.files);
+}
+
+/* ---------- panneaux ---------- */
+let tab = "corps", query = "";
+const TABS = [["corps", "Corps"], ["visage", "Visage"], ["yeux", "Yeux"], ["membres", "Membres"], ["intime", "Poitrine & sexe"], ["style", "Cheveux & peau"], ["fichier", "Fichier"]];
+function range(id, lab, v, min, max, step, fmt, extra) {
+  return `<div class="sl" data-k="${esc(lab.toLowerCase())}"><label for="${id}"><span>${esc(lab)}</span><output id="${id}-o">${fmt(v)}</output></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}" ${extra || ""}></div>`;
+}
+const pct = v => Math.round(v * 100) + " %";
+const sgn = v => (v > 0 ? "+" : "") + Math.round(v * 100);
+const sliderMap = new Map();
+function autoSliders(tabName) {
+  const groups = new Map();
+  for (const s of model.sliders) {
+    const [t, g] = catOf(s);
+    if (t !== tabName) continue;
+    if (S.sym && s.side === "l" && model.sliders.some(o => o.sym === s.sym && o.side === "r")) continue;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(s);
+  }
+  let h = "";
+  for (const [g, list] of groups) {
+    list.sort((a, b) => label(a.words).localeCompare(label(b.words), "fr"));
+    h += `<details class="grp" ${query ? "open" : ""}><summary>${esc(g)} <small>${list.length}</small></summary>`;
+    for (const s of list) {
+      const id = "s" + sliderMap.size; sliderMap.set(id, s);
+      const side = !S.sym && s.side ? (s.side === "r" ? " (droite)" : " (gauche)") : "";
+      h += range(id, label(s.words) + side, S.sl[s.key] || 0, s.bi ? -1 : 0, 1, 0.01, sgn, `data-auto="1"`);
+    }
+    h += `</details>`;
+  }
+  return h;
+}
+function proxySelect(kind, lab, none) {
+  const list = pack.proxies.filter(p => p.kind === kind);
+  if (!list.length) return `<p class="note">${esc(lab)} : aucun modèle dans les données chargées.</p>`;
+  return `<label class="f">${esc(lab)}<select data-px="${kind}">${none ? `<option value="">Aucun</option>` : ""}${list.map(p => `<option value="${esc(p.id)}" ${p.id === S.sel[kind] ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>`;
+}
+function fingerPanel(kind) {
+  const cs = chains.filter(c => c.kind === kind && (S.sym ? c.side === "r" : true));
+  if (!cs.length) return `<p class="note">Articulations ${kind === "finger" ? "des doigts" : "des orteils"} introuvables dans le corps de base.</p>`;
+  const names = kind === "finger" ? ["Pouce", "Index", "Majeur", "Annulaire", "Auriculaire"] : ["Gros orteil", "2e orteil", "3e orteil", "4e orteil", "Petit orteil"];
+  let h = `<div class="pair">${range(`g-${kind}-l`, "Longueur (tous)", S.glob[kind].l, 0.6, 1.6, 0.01, pct, `data-glob="${kind}:l"`)}${range(`g-${kind}-t`, "Épaisseur (tous)", S.glob[kind].t, 0.6, 1.6, 0.01, pct, `data-glob="${kind}:t"`)}</div>`;
+  for (const c of cs) {
+    h += `<details class="grp"><summary>${names[c.f - 1] || "Doigt " + c.f}${S.sym ? "" : c.side === "r" ? " droit" : " gauche"} <small>${c.joints.length - 1} phalanges</small></summary>`;
+    for (let k = 0; k + 1 < c.joints.length; k++) {
+      const key = `${kind}:${c.side}:${c.f}:${k}`, v = S.bones[key] || { l: 1, t: 1 };
+      h += `<div class="pair">${range(`b-${key}-l`, `Phalange ${k + 1} · longueur`, v.l, 0.5, 1.8, 0.01, pct, `data-bone="${key}:l"`)}${range(`b-${key}-t`, `Phalange ${k + 1} · épaisseur`, v.t, 0.5, 1.8, 0.01, pct, `data-bone="${key}:t"`)}</div>`;
+    }
+    h += `</details>`;
+  }
+  return h;
+}
+function renderPanels() {
+  $("tabs").innerHTML = TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" aria-selected="${k === tab}">${t}</button>`).join("");
+  const P_ = $("pane");
+  if (!pack) { P_.innerHTML = filePane(); return; }
+  sliderMap.clear();
+  const M = S.macro;
+  let h = "";
+  const symBox = `<label class="chk"><input type="checkbox" id="sym" ${S.sym ? "checked" : ""}> Symétrie gauche / droite</label>`;
+  if (tab === "corps") {
+    h += `<div class="hero"><div><b id="hval">${Math.round(heightCm)} cm</b><span>taille du perso</span></div><div><b>${M.age} ans</b><span>âge (adulte)</span></div></div>`;
+    h += `<details class="grp" open><summary>Silhouette</summary>`
+      + range("m-gender", "Féminin ↔ masculin", M.gender, 0, 1, 0.01, pct, `data-m="gender"`)
+      + range("m-age", "Âge", M.age, AGE_MIN, AGE_MAX, 1, v => v + " ans", `data-m="age"`)
+      + range("m-muscle", "Musculature", M.muscle, 0, 1, 0.01, pct, `data-m="muscle"`)
+      + range("m-weight", "Corpulence", M.weight, 0, 1, 0.01, pct, `data-m="weight"`)
+      + range("m-height", "Taille", M.height, 0, 1, 0.01, pct, `data-m="height"`)
+      + range("m-prop", "Proportions", M.prop, 0, 1, 0.01, pct, `data-m="prop"`) + `</details>`;
+    h += `<details class="grp"><summary>Origines</summary>` + ["Afrique", "Asie", "Europe"].map((n, i) => range("m-race" + i, n, M.race[i], 0, 1, 0.01, pct, `data-race="${i}"`)).join("") + `</details>`;
+    h += autoSliders("corps");
+  } else if (tab === "visage") {
+    h += symBox + autoSliders("visage");
+  } else if (tab === "yeux") {
+    const E = S.eye;
+    h += proxySelect("eyes", "Globes oculaires", false)
+      + `<div class="row2"><label class="f">Couleur de l'iris<input type="color" data-c="eye.color" value="${E.color}"></label><label class="f">Blanc de l'œil<input type="color" data-c="eye.sclera" value="${E.sclera}"></label></div>`
+      + range("e-iris", "Taille de l'iris", E.iris, 0.25, 0.55, 0.005, pct, `data-e="iris"`)
+      + range("e-pupil", "Taille de la pupille", E.pupil, 0.12, 0.75, 0.005, pct, `data-e="pupil"`)
+      + `<label class="chk"><input type="checkbox" data-e="orig" ${E.orig ? "checked" : ""}> Utiliser la texture d'origine des yeux</label>`
+      + `<h3>Cils</h3>` + proxySelect("eyelashes", "Modèle de cils", true) + range("lash", "Longueur des cils", S.lash, 0.3, 3, 0.01, pct, `data-lash="1"`)
+      + `<h3>Sourcils</h3>` + proxySelect("eyebrows", "Modèle de sourcils", true) + `<label class="f">Couleur des cils et sourcils<input type="color" data-c="brow" value="${S.brow}"></label>`;
+  } else if (tab === "membres") {
+    h += symBox + autoSliders("membres")
+      + `<h3>Phalanges des doigts</h3>` + fingerPanel("finger")
+      + `<h3>Orteils</h3>` + fingerPanel("toe");
+  } else if (tab === "intime") {
+    h += `<details class="grp" open><summary>Poitrine</summary>`
+      + range("m-cup", "Volume", M.cup, 0, 1, 0.01, pct, `data-m="cup"`)
+      + range("m-firm", "Fermeté", M.firm, 0, 1, 0.01, pct, `data-m="firm"`) + `</details>`;
+    h += `<h3>Sexe</h3>` + proxySelect("genitals", "Modèle", true);
+    if (S.sel.genitals) h += range("g-size", "Taille", S.gen.size, 0.5, 2, 0.01, pct, `data-g="size"`) + range("g-len", "Longueur", S.gen.len, 0.5, 2, 0.01, pct, `data-g="len"`) + range("g-girth", "Épaisseur", S.gen.girth, 0.5, 2, 0.01, pct, `data-g="girth"`);
+    h += symBox + autoSliders("intime");
+  } else if (tab === "style") {
+    h += `<h3>Coupe de cheveux</h3>` + proxySelect("hair", "Coupe", true)
+      + `<div class="row2"><label class="f">Couleur<input type="color" data-c="hair.color" value="${S.hair.color}"></label><label class="chk" style="align-self:end"><input type="checkbox" data-ht="1" ${S.hair.tint ? "checked" : ""}> Teinter</label></div>`
+      + `<h3>Peau</h3><div class="sw">${["#f3d3bf", "#e8b796", "#d6a184", "#b97d58", "#8d5a3b", "#5e3b28", "#3d261a"].map(c => `<button class="swb" data-skin="${c}" style="background:${c}" aria-label="Teinte ${c}"></button>`).join("")}</div>`
+      + `<div class="row2"><label class="f">Teinte libre<input type="color" data-c="skin.color" value="${S.skin.color}"></label>`
+      + `<label class="f">Texture<select data-skintex="1"><option value="">Aucune (couleur)</option>${pack.skins.map(s => `<option value="${esc(s.id)}" ${s.id === S.skin.tex ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label></div>`
+      + range("sk-r", "Aspect mat ↔ brillant", 1 - S.skin.rough, 0, 0.8, 0.01, pct, `data-rough="1"`)
+      + `<h3>Bouche</h3>` + proxySelect("teeth", "Dents", true) + proxySelect("tongue", "Langue", true);
+  } else h += filePane();
+  P_.innerHTML = (tab === "fichier" || tab === "style" || tab === "yeux" ? "" : `<div class="search"><input type="search" id="q" placeholder="Chercher un réglage (nez, cuisse, lèvre…)" value="${esc(query)}"></div>`) + h;
+  if (query) filter();
+}
+function filePane() {
+  const d = pack;
+  let h = `<h3>Données MakeHuman</h3>`;
+  h += d ? `<p class="ok">${d.targets.length} réglages de forme · ${model ? model.macro.length : 0} pour la silhouette · ${d.proxies.length} accessoires · ${d.skins.length} peaux · ${chains.length} chaînes doigts/orteils</p>` : `<p class="note">Aucune donnée chargée pour l'instant.</p>`;
+  h += `<div class="btns"><label class="btn">Choisir un dossier<input type="file" id="fdir" webkitdirectory multiple hidden></label><label class="btn alt">Choisir des fichiers ou .zip<input type="file" id="ffiles" multiple hidden></label></div>
+    <p class="note">Tu peux aussi glisser un dossier ou un .zip sur la fenêtre. Plusieurs imports s'ajoutent (corps + accessoires).</p><p class="note" id="log"></p>`;
+  if (d) h += `<div class="btns"><button class="btn alt" id="xpack">Exporter le pack (pour le téléphone)</button><button class="btn del" id="clear">Effacer les données</button></div>`;
+  h += `<h3>Personnage</h3><div class="btns"><button class="btn" id="rand">Aléatoire</button><button class="btn alt" id="reset">Réinitialiser</button></div>
+    <div class="btns"><button class="btn alt" id="save">Enregistrer (.json)</button><label class="btn alt">Ouvrir un perso<input type="file" id="fload" accept=".json,application/json" hidden></label><button class="btn alt" id="copy">Copier</button></div>`;
+  if (d) h += `<h3>Exporter</h3><div class="btns"><button class="btn" id="glb">Modèle 3D (.glb pour Blender)</button><button class="btn alt" id="png">Image (.png)</button></div>
+    <p class="note">Le .glb s'ouvre dans Blender (Fichier → Importer → glTF). Échelle en mètres.</p>`;
+  h += `<p class="note">Les personnages créés ici sont toujours adultes : l'âge commence à ${AGE_MIN} ans.</p>`;
+  return h;
+}
+function filter() {
+  const q = query.toLowerCase();
+  document.querySelectorAll("#pane .sl").forEach(e => e.hidden = q && !e.dataset.k.includes(q));
+  document.querySelectorAll("#pane details.grp").forEach(d => { const any = [...d.querySelectorAll(".sl")].some(e => !e.hidden); d.hidden = q && !any && !d.querySelector("summary").textContent.toLowerCase().includes(q); if (q) d.open = true; });
+}
+
+/* ---------- évènements ---------- */
+$("tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (!b) return; tab = b.dataset.tab; renderPanels(); $("pane").scrollTop = 0; focusFor(tab); });
+function focusFor(t) {
+  if (!P || !bodyVerts) return;
+  let minY = Infinity, maxY = -Infinity; for (const i of bodyVerts) { const y = P[i * 3 + 1]; minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+  const h = maxY - minY, jp = n => Core.jointPos(pack, P, n);
+  if (t === "visage" || t === "yeux") view.focus([0, minY + h * 0.92, 0], h * 0.32, 0);
+  else if (t === "intime") view.focus([0, minY + h * 0.6, 0], h * 0.7, 0);
+  else if (t === "membres") { const j = jp("joint-r-hand") || jp("joint-r-finger-3-1"); if (j) view.focus(j, h * 0.28, -0.6); }
+  else view.focus([0, minY + h * 0.5, 0], h * 1.95);
+}
+const pane = $("pane");
+pane.addEventListener("input", e => {
+  const t = e.target, d = t.dataset, v = +t.value;
+  if (t.id === "q") { query = t.value; filter(); return; }
+  const out = $(t.id + "-o");
+  if (d.auto) {
+    const s = sliderMap.get(t.id); S.sl[s.key] = v;
+    if (S.sym && s.sym) model.sliders.forEach(o => { if (o.sym === s.sym) S.sl[o.key] = v; });
+    out.textContent = sgn(v);
+  } else if (d.m) { S.macro[d.m] = v; out.textContent = d.m === "age" ? v + " ans" : pct(v); }
+  else if (d.race) { S.macro.race[+d.race] = v; out.textContent = pct(v); }
+  else if (d.bone) {
+    const [kind, side, f, k, prop] = d.bone.split(":"); const key = `${kind}:${side}:${f}:${k}`;
+    const cur = S.bones[key] || { l: 1, t: 1 }; cur[prop] = v; S.bones[key] = cur;
+    if (S.sym) S.bones[`${kind}:l:${f}:${k}`] = { ...cur };
+    out.textContent = pct(v);
+  } else if (d.glob) { const [k, p] = d.glob.split(":"); S.glob[k][p] = v; out.textContent = pct(v); }
+  else if (d.g) { S.gen[d.g] = v; out.textContent = pct(v); }
+  else if (d.lash) { S.lash = v; out.textContent = pct(v); }
+  else if (d.e && t.type === "range") { S.eye[d.e] = v; out.textContent = pct(v); clearTimeout(pane._et); pane._et = setTimeout(applyMaterials, 60); return; }
+  else if (d.rough) { S.skin.rough = 1 - v; out.textContent = pct(v); applyMaterials(); saveS(); return; }
+  else if (d.c) { const [a, b] = d.c.split("."); if (b) S[a][b] = t.value; else S[a] = t.value; applyMaterials(); saveS(); return; }
+  else return;
+  schedule();
+});
+pane.addEventListener("dblclick", e => { const t = e.target; if (t.type === "range" && (t.dataset.auto)) { t.value = 0; t.dispatchEvent(new Event("input", { bubbles: true })); } });
+pane.addEventListener("change", async e => {
+  const t = e.target, d = t.dataset;
+  if (t.id === "sym") { S.sym = t.checked; renderPanels(); schedule(); return; }
+  if (d.px) { S.sel[d.px] = t.value || null; mountProxies(); rebuild(); await applyMaterials(); if (d.px === "genitals") renderPanels(); return; }
+  if (d.e === "orig") { S.eye.orig = t.checked; applyMaterials(); saveS(); return; }
+  if (d.ht) { S.hair.tint = t.checked; applyMaterials(); saveS(); return; }
+  if (d.skintex) { S.skin.tex = t.value || null; applyMaterials(); saveS(); return; }
+  if (t.id === "fdir" || t.id === "ffiles") { await importFiles(fileEntries(t.files)); return; }
+  if (t.id === "fload") { const f = t.files[0]; if (f) loadPerso(await f.text()); return; }
+});
+pane.addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.skin) { S.skin.color = b.dataset.skin; applyMaterials(); saveS(); renderPanels(); return; }
+  if (b.id === "rand") { randomize(); return; }
+  if (b.id === "reset") { const keep = { sel: S.sel }; S = Object.assign(DEF(), keep); mountProxies(); rebuild(); applyMaterials(); renderPanels(); toast("Personnage réinitialisé"); return; }
+  if (b.id === "save") { await save(new Blob([JSON.stringify(S, null, 1)], { type: "application/json" }), "personnage.json"); return; }
+  if (b.id === "copy") { try { await navigator.clipboard.writeText(JSON.stringify(S)); toast("Personnage copié"); } catch (err) { toast("Copie bloquée"); } return; }
+  if (b.id === "glb") { $("busy").hidden = false; $("busyMsg").textContent = "Création du fichier 3D…"; try { await save(await exportGLB(), "personnage.glb"); } catch (err) { toast("Export impossible : " + err.message); } $("busy").hidden = true; return; }
+  if (b.id === "png") { const u = view.snapshot(); await save(await (await fetch(u)).blob(), "personnage.png"); return; }
+  if (b.id === "xpack") { $("busy").hidden = false; $("busyMsg").textContent = "Préparation du pack…"; try { await save(await Core.packToBlob(pack), "pack.atperso"); toast("Mets pack.atperso à côté de index.html sur ton site"); } catch (err) { toast(err.message); } $("busy").hidden = true; return; }
+  if (b.id === "clear") { await dbDel("pack"); location.reload(); return; }
+});
+function loadPerso(txt) {
+  try { const o = JSON.parse(txt); if (!o.macro) throw 0; S = Object.assign(DEF(), o); S.macro.age = Math.max(AGE_MIN, Math.min(AGE_MAX, +S.macro.age || 25)); mountProxies(); rebuild(); applyMaterials(); renderPanels(); toast("Personnage chargé"); }
+  catch (e) { toast("Fichier de personnage non reconnu"); }
+}
+function randomize() {
+  const r = (a, b) => a + Math.random() * (b - a);
+  S.macro = { gender: Math.random() < 0.5 ? r(0, 0.25) : r(0.75, 1), age: Math.round(r(AGE_MIN, 65)), muscle: r(0.25, 0.85), weight: r(0.25, 0.8), height: r(0.25, 0.8), prop: r(0.4, 0.8), cup: r(0.15, 0.9), firm: r(0.3, 0.9), race: [Math.random(), Math.random(), Math.random()] };
+  S.sl = {};
+  for (const s of model.sliders) { const [t] = catOf(s); if (t === "visage" && Math.random() < 0.5) S.sl[s.key] = r(s.bi ? -0.35 : 0, 0.35); }
+  if (S.sym) for (const s of model.sliders) if (s.side === "l" && s.sym) { const o = model.sliders.find(x => x.sym === s.sym && x.side === "r"); if (o) S.sl[s.key] = S.sl[o.key] || 0; }
+  const eyes = ["#5b6e3c", "#3d5a80", "#6b4a2b", "#2f2016", "#7a8a9a", "#8a6d3b"]; S.eye.color = eyes[Math.random() * eyes.length | 0];
+  const hairs = pack.proxies.filter(p => p.kind === "hair"); S.sel.hair = hairs.length ? hairs[Math.random() * hairs.length | 0].id : null;
+  const hc = ["#1d1712", "#3a2a1d", "#6b4a2b", "#a8763e", "#d8b27a", "#8c3b22", "#9a9a9a"]; S.hair.color = hc[Math.random() * hc.length | 0];
+  mountProxies(); rebuild(); applyMaterials(); renderPanels();
+}
+
+/* ---------- enregistrement de fichiers ---------- */
+let dl = null;
+if (window.claude && window.claude.use) window.claude.use("downloads").then(d => { dl = d; }).catch(() => {});
+async function save(blob, name) {
+  if (dl) { try { await dl.save({ filename: name, data: blob }); toast("Fichier enregistré"); } catch (e) { toast("Enregistrement annulé"); } return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast("Fichier téléchargé");
+}
+
+/* ---------- export GLB ---------- */
+async function exportGLB() {
+  const items = [];
+  const add = (name, o, extra) => { if (o && o.pos) items.push({ name, pos: o.pos, nrm: o.nrm, ...extra, color: o.color, alpha: !!o.blend }); };
+  add("Corps", view.objs.get("body"), { uv: pack.base.uv, tri: pack.base.tri, tex: S.skin.tex ? (pack.skins.find(s => s.id === S.skin.tex) || {}).tex : null });
+  for (const kind in S.sel) {
+    const px = S.sel[kind] && pack.proxies.find(p => p.id === S.sel[kind]); if (!px) continue;
+    let tex = px.tex;
+    if (kind === "eyes" && !S.eye.orig) tex = await new Promise(r => eyeCanvas().toBlob(r, "image/png"));
+    if (kind === "genitals") tex = null;
+    add(kind, view.objs.get("px:" + kind), { uv: px.uv, tri: px.tri, tex });
+  }
+  const bin = [], views = [], acc = [], meshes = [], mats = [], images = [], textures = [], nodes = [];
+  let len = 0;
+  const push = (u8, target) => { const pad = (4 - (len % 4)) % 4; if (pad) { bin.push(new Uint8Array(pad)); len += pad; } bin.push(u8); views.push({ buffer: 0, byteOffset: len, byteLength: u8.byteLength, ...(target ? { target } : {}) }); len += u8.byteLength; return views.length - 1; };
+  const lin = c => c.map(v => Math.pow(v, 2.2));
+  for (const it of items) {
+    const n = it.pos.length / 3;
+    let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) { const v = it.pos[i * 3 + k]; if (v < mn[k]) mn[k] = v; if (v > mx[k]) mx[k] = v; }
+    const uv = new Float32Array(it.uv); for (let i = 1; i < uv.length; i += 2) uv[i] = 1 - uv[i];
+    const a0 = acc.push({ bufferView: push(new Uint8Array(it.pos.buffer.slice(0)), 34962), componentType: 5126, count: n, type: "VEC3", min: mn, max: mx }) - 1;
+    const a1 = acc.push({ bufferView: push(new Uint8Array(it.nrm.buffer.slice(0)), 34962), componentType: 5126, count: n, type: "VEC3" }) - 1;
+    const a2 = acc.push({ bufferView: push(new Uint8Array(uv.buffer), 34962), componentType: 5126, count: n, type: "VEC2" }) - 1;
+    const a3 = acc.push({ bufferView: push(new Uint8Array(new Uint32Array(it.tri).buffer), 34963), componentType: 5125, count: it.tri.length, type: "SCALAR" }) - 1;
+    const mat = { name: it.name, doubleSided: true, pbrMetallicRoughness: { baseColorFactor: [...lin(it.color || [0.8, 0.8, 0.8]), 1], metallicFactor: 0, roughnessFactor: 0.6 } };
+    if (it.tex) {
+      const bytes = new Uint8Array(await it.tex.arrayBuffer());
+      const img = images.push({ bufferView: push(bytes), mimeType: it.tex.type === "image/jpeg" ? "image/jpeg" : "image/png" }) - 1;
+      mat.pbrMetallicRoughness.baseColorTexture = { index: textures.push({ source: img }) - 1 };
+      if (it.alpha) { mat.alphaMode = "MASK"; mat.alphaCutoff = 0.5; }
+    }
+    const m = mats.push(mat) - 1;
+    meshes.push({ name: it.name, primitives: [{ attributes: { POSITION: a0, NORMAL: a1, TEXCOORD_0: a2 }, indices: a3, material: m }] });
+    nodes.push({ name: it.name, mesh: meshes.length - 1 });
+  }
+  const root = nodes.length;
+  nodes.push({ name: "Personnage", scale: [0.1, 0.1, 0.1], children: nodes.map((_, i) => i) });
+  const json = { asset: { version: "2.0", generator: "Atelier Perso 3D" }, scene: 0, scenes: [{ nodes: [root] }], nodes, meshes, materials: mats, accessors: acc, bufferViews: views, buffers: [{ byteLength: len + ((4 - len % 4) % 4) }] };
+  if (images.length) { json.images = images; json.textures = textures; }
+  let js = new TextEncoder().encode(JSON.stringify(json));
+  const jpad = (4 - js.length % 4) % 4; const jsP = new Uint8Array(js.length + jpad); jsP.set(js); jsP.fill(32, js.length);
+  const bpad = (4 - len % 4) % 4; if (bpad) bin.push(new Uint8Array(bpad));
+  const binLen = len + bpad;
+  const head = new DataView(new ArrayBuffer(20));
+  head.setUint32(0, 0x46546c67, true); head.setUint32(4, 2, true); head.setUint32(8, 12 + 8 + jsP.length + 8 + binLen, true);
+  head.setUint32(12, jsP.length, true); head.setUint32(16, 0x4e4f534a, true);
+  const bh = new DataView(new ArrayBuffer(8)); bh.setUint32(0, binLen, true); bh.setUint32(4, 0x004e4942, true);
+  return new Blob([head, jsP, bh, ...bin], { type: "model/gltf-binary" });
+}
+
+/* ---------- glisser-déposer ---------- */
+addEventListener("dragover", e => { e.preventDefault(); document.body.classList.add("drop"); });
+addEventListener("dragleave", e => { if (!e.relatedTarget) document.body.classList.remove("drop"); });
+addEventListener("drop", async e => { e.preventDefault(); document.body.classList.remove("drop"); await importFiles(await dropEntries(e.dataTransfer)); });
+$("emptyFiles").addEventListener("change", e => importFiles(fileEntries(e.target.files)));
+$("emptyDir").addEventListener("change", e => importFiles(fileEntries(e.target.files)));
+$("emptyDemo") && $("emptyDemo").addEventListener("click", () => { tab = "fichier"; renderPanels(); });
+
+/* ---------- démarrage ---------- */
+(async () => {
+  try { view = View3D($("c3d")); } catch (e) { view = null; }
+  if (!view) { $("empty").hidden = false; $("emptyLog").textContent = "Ton navigateur ne gère pas la 3D (WebGL2)."; renderPanels(); return; }
+  renderPanels();
+  let p = await dbGet("pack");
+  if (!p) {
+    try { const r = await fetch("pack.atperso"); if (r.ok) { $("busy").hidden = false; $("busyMsg").textContent = "Chargement du pack…"; p = await Core.packFromBuffer(await r.arrayBuffer()); try { await dbPut("pack", p); } catch (e) {} } } catch (e) {}
+    $("busy").hidden = true;
+  }
+  if (p && p.base) await usePack(p); else $("empty").hidden = false;
+  if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic/.test(location.hostname)) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+})();
+
+</script>
+</body>
+</html>
